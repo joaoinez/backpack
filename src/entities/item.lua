@@ -1,103 +1,115 @@
 local Entity = require 'src.entities.entity'
 local CELL_SIZE = require('src.globals').CELL_SIZE
 
+---@class snap_position
+---@field x number
+---@field y number
+
 ---@class Item: Entity
 ---@field name string
 ---@field shape number[][]
 ---@field dragging boolean
----@field drag_offset_x number
----@field drag_offset_y number
+---@field snap_position snap_position
 local Item = {}
 Item.__index = Item
 setmetatable(Item, { __index = Entity })
 
 ---@param position position
----@param drawable debug_drawable
 ---@param name string
 ---@param shape number[][]
-function Item:new(position, drawable, name, shape)
-  local o = Entity:new(position, drawable)
+function Item:new(position, name, shape)
+  local o = Entity:new(position)
   setmetatable(o, self)
 
   o.name = name
   o.shape = shape
   o.dragging = false
-  o.drag_offset_x = 0
-  o.drag_offset_y = 0
+  o.snap_position = {
+    x = position.x,
+    y = position.y,
+  }
 
   return o
 end
 
+---@param mx number
+---@param my number
 function Item:containsPoint(mx, my)
-  for row, cols in ipairs(self.shape) do
-    for col, value in ipairs(cols) do
-      if value == 1 then
-        local x = self.position.x + (col - 1) * CELL_SIZE
-        local y = self.position.y + (row - 1) * CELL_SIZE
-        if
-          mx >= x
-          and mx < x + CELL_SIZE
-          and my >= y
-          and my < y + CELL_SIZE
-        then
-          return true
-        end
+  local contains = false
+  for i, row in ipairs(self.shape) do
+    for j, col in ipairs(row) do
+      if col == 0 then goto continue end
+
+      local x = self.position.x + (CELL_SIZE * j)
+      local y = self.position.y + (CELL_SIZE * i)
+
+      if
+        (mx >= x)
+        and (mx <= x + CELL_SIZE)
+        and (my >= y)
+        and (my <= y + CELL_SIZE)
+      then
+        contains = true
+        break
       end
+
+      ::continue::
     end
   end
-  return false
+
+  return contains
 end
 
+---@param mx number
+---@param my number
 function Item:startDrag(mx, my)
-  self.dragging = true
-  self.drag_offset_x = self.position.x - mx
-  self.drag_offset_y = self.position.y - my
+  if self:containsPoint(mx, my) then self.dragging = true end
 end
 
-function Item:updateDrag(mx, my)
+---@param mx number
+---@param my number
+---@param dx number
+---@param dy number
+function Item:drag(mx, my, dx, dy)
+  if not self.dragging then return end
+
+  self.position = {
+    x = self.position.x + dx,
+    y = self.position.y + dy,
+  }
+end
+
+function Item:endDrag()
   if self.dragging then
-    self.position.x = mx + self.drag_offset_x
-    self.position.y = my + self.drag_offset_y
+    self.dragging = false
+    self.position = {
+      x = self.snap_position.x,
+      y = self.snap_position.y,
+    }
   end
 end
-
-function Item:stopDrag() self.dragging = false end
 
 function Item:draw()
-  local radius = 6
-  for row, cols in ipairs(self.shape) do
-    for col, value in ipairs(cols) do
-      if value == 1 then
-        local x = self.position.x + (col - 1) * CELL_SIZE
-        local y = self.position.y + (row - 1) * CELL_SIZE
+  if not self.shape then return end
 
-        -- Fill
-        love.graphics.setColor(1, 0.23, 0.4)
-        love.graphics.rectangle(
-          'fill',
-          x,
-          y,
-          CELL_SIZE,
-          CELL_SIZE,
-          radius,
-          radius
-        )
+  for i, row in ipairs(self.shape) do
+    for j, col in ipairs(row) do
+      if col == 0 then goto continue end
 
-        -- Border
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle(
-          'line',
-          x,
-          y,
-          CELL_SIZE,
-          CELL_SIZE,
-          radius,
-          radius
-        )
-      end
+      local x = self.position.x + (CELL_SIZE * j)
+      local y = self.position.y + (CELL_SIZE * i)
+      local radius = math.max(2, CELL_SIZE * 0.08)
+
+      love.graphics.setColor(1, 0.8, 0.6)
+      love.graphics.rectangle('fill', x, y, CELL_SIZE, CELL_SIZE, radius)
+
+      love.graphics.setLineWidth(3)
+      love.graphics.setColor(0.2, 1, 0.7)
+      love.graphics.rectangle('line', x, y, CELL_SIZE, CELL_SIZE, radius)
+
+      ::continue::
     end
   end
-  love.graphics.setColor(1, 1, 1, 1)
 end
 
 return Item

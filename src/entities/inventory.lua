@@ -8,10 +8,9 @@ Inventory.__index = Inventory
 setmetatable(Inventory, { __index = Entity })
 
 ---@param position position
----@param drawable debug_drawable
 ---@param shape number[][]
-function Inventory:new(position, drawable, shape)
-  local o = Entity:new(position, drawable)
+function Inventory:new(position, shape)
+  local o = Entity:new(position)
   setmetatable(o, self)
 
   o.shape = shape
@@ -20,40 +19,27 @@ function Inventory:new(position, drawable, shape)
 end
 
 function Inventory:draw()
-  local radius = 6
-  for row, cols in ipairs(self.shape) do
-    for col, value in ipairs(cols) do
-      if value == 1 then
-        local x = self.position.x + (col - 1) * CELL_SIZE
-        local y = self.position.y + (row - 1) * CELL_SIZE
+  if not self.shape then return end
 
-        -- Fill
-        love.graphics.setColor(0.1, 0.63, 0.1)
-        love.graphics.rectangle(
-          'fill',
-          x,
-          y,
-          CELL_SIZE,
-          CELL_SIZE,
-          radius,
-          radius
-        )
+  for i, row in ipairs(self.shape) do
+    for j, col in ipairs(row) do
+      if col == 0 then goto continue end
 
-        -- Border
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle(
-          'line',
-          x,
-          y,
-          CELL_SIZE,
-          CELL_SIZE,
-          radius,
-          radius
-        )
-      end
+      local x = self.position.x + (CELL_SIZE * j)
+      local y = self.position.y + (CELL_SIZE * i)
+      local w, h = CELL_SIZE, CELL_SIZE
+      local radius = math.max(2, CELL_SIZE * 0.08)
+
+      love.graphics.setColor(1, 0.6, 0)
+      love.graphics.rectangle('fill', x, y, w, h, radius)
+
+      love.graphics.setLineWidth(3)
+      love.graphics.setColor(0.6, 0.8, 1)
+      love.graphics.rectangle('line', x, y, w, h, radius)
+
+      ::continue::
     end
   end
-  love.graphics.setColor(1, 1, 1, 1)
 end
 
 return Inventory
