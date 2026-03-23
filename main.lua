@@ -1,33 +1,82 @@
-local Inventory = require 'src.entities.inventory'
-local Item = require 'src.entities.item'
-
----@type Inventory
-local inventory = nil
----@type Item
-local sword = nil
+local SceneManager = require 'src.state.scene_manager'
+---@type SceneManager | nil
+local scene_manager = nil
 
 function love.load()
-  sword = Item:new({ x = 20, y = 20 }, 'Sword', {
-    { 1, 1 },
-  })
-  inventory = Inventory:new({ x = 200, y = 200 }, {
-    { 1, 1, 1 },
-    { 1, 0, 1 },
-    { 1, 1, 1 },
-  })
+  scene_manager = SceneManager:new()
+  scene_manager:setScene 'main_menu'
+
+  if
+    not scene_manager.current_scene or not scene_manager.current_scene.load
+  then
+    return
+  end
+
+  scene_manager.current_scene:load()
 end
 
 function love.draw()
-  love.graphics.setBackgroundColor(0.12, 0.16, 0.20)
+  if
+    not scene_manager
+    or not scene_manager.current_scene
+    or not scene_manager.current_scene.draw
+  then
+    return
+  end
 
-  inventory:draw()
-  sword:draw()
+  scene_manager.current_scene:draw()
 end
 
 function love.mousepressed(x, y, button)
-  if button == 1 then sword:startDrag(x, y) end
+  if
+    not scene_manager
+    or not scene_manager.current_scene
+    or not scene_manager.current_scene.mousepressed
+  then
+    return
+  end
+
+  scene_manager.current_scene:mousepressed(x, y, button)
 end
 
-function love.mousemoved(x, y, dx, dy) sword:drag(x, y, dx, dy, inventory) end
+function love.mousemoved(x, y, dx, dy)
+  if
+    not scene_manager
+    or not scene_manager.current_scene
+    or not scene_manager.current_scene.mousemoved
+  then
+    return
+  end
 
-function love.mousereleased() sword:endDrag() end
+  if scene_manager.current_scene.mousemoved then
+    scene_manager.current_scene:mousemoved(x, y, dx, dy)
+  end
+end
+
+function love.mousereleased()
+  if
+    not scene_manager
+    or not scene_manager.current_scene
+    or not scene_manager.current_scene.mousereleased
+  then
+    return
+  end
+
+  if scene_manager.current_scene.mousereleased then
+    scene_manager.current_scene:mousereleased()
+  end
+end
+
+function love.keypressed(key)
+  if
+    not scene_manager
+    or not scene_manager.current_scene
+    or not scene_manager.current_scene.keypressed
+  then
+    return
+  end
+
+  if scene_manager.current_scene.keypressed then
+    scene_manager.current_scene:keypressed(key, scene_manager)
+  end
+end
