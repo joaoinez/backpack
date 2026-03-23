@@ -18,7 +18,7 @@ setmetatable(Item, { __index = Entity })
 ---@param name string
 ---@param shape number[][]
 function Item:new(position, name, shape)
-  local o = Entity:new(position)
+  local o = Entity:new('item', position)
   setmetatable(o, self)
 
   o.name = name
@@ -40,8 +40,8 @@ function Item:containsPoint(mx, my)
     for j, col in ipairs(row) do
       if col == 0 then goto continue end
 
-      local x = self.position.x + (CELL_SIZE * j)
-      local y = self.position.y + (CELL_SIZE * i)
+      local x = self.position.x + (CELL_SIZE * (j - 1))
+      local y = self.position.y + (CELL_SIZE * (i - 1))
 
       if
         (mx >= x)
@@ -70,13 +70,25 @@ end
 ---@param my number
 ---@param dx number
 ---@param dy number
-function Item:drag(mx, my, dx, dy)
+---@param inventory Inventory
+function Item:drag(mx, my, dx, dy, inventory)
   if not self.dragging then return end
 
   self.position = {
     x = self.position.x + dx,
     y = self.position.y + dy,
   }
+
+  if inventory:containsPoint(mx, my) then
+    -- TODO: These checks maybe should be done in inventory class
+    -- TODO: Check which inventory cell the mouse is in
+    -- TODO: Check if cell is free
+    -- TODO: If it's free, go through the item shape, and go cell by cell,
+    -- to see if they exist/are free
+    -- TODO: Add item to inventory
+    -- TODO: Populate inventory slots with the item
+    -- TODO: Change snap_position to first inventory_slot position
+  end
 end
 
 function Item:endDrag()
@@ -96,8 +108,8 @@ function Item:draw()
     for j, col in ipairs(row) do
       if col == 0 then goto continue end
 
-      local x = self.position.x + (CELL_SIZE * j)
-      local y = self.position.y + (CELL_SIZE * i)
+      local x = self.position.x + (CELL_SIZE * (j - 1))
+      local y = self.position.y + (CELL_SIZE * (i - 1))
       local radius = math.max(2, CELL_SIZE * 0.08)
 
       love.graphics.setColor(1, 0.8, 0.6)
