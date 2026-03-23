@@ -77,6 +77,6 @@ function love.keypressed(key)
   end
 
   if scene_manager.current_scene.keypressed then
-    scene_manager.current_scene:keypressed(key, scene_manager)
+    scene_manager.current_scene:keypressed(key)
   end
 end

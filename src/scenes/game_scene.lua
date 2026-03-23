@@ -1,14 +1,17 @@
 local Inventory = require 'src.entities.inventory'
 local Item = require 'src.entities.item'
+local Scene = require 'src.scenes.scene'
 
----@class GameScene
+---@class GameScene: Scene
 ---@field inventory Inventory
 ---@field items Item[]
 local GameScene = {}
 GameScene.__index = GameScene
+setmetatable(GameScene, { __index = Scene })
 
-function GameScene:new()
-  local o = {}
+---@param scene_manager SceneManager
+function GameScene:new(scene_manager)
+  local o = Scene:new(scene_manager, 'game')
   setmetatable(o, self)
 
   o.inventory = nil
@@ -68,9 +71,8 @@ function GameScene:mousereleased()
 end
 
 ---@param key string
----@param scene_manager SceneManager
-function GameScene:keypressed(key, scene_manager)
-  if key == 'return' then scene_manager:setScene 'main_menu' end
+function GameScene:keypressed(key)
+  if key == 'return' then self.scene_manager:setScene 'main_menu' end
 end
 
 function GameScene:unload()

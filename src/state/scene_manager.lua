@@ -11,9 +11,10 @@ function SceneManager:new()
   local o = {}
   setmetatable(o, self)
 
+  ---@type {['main_menu']: MainMenuScene, ['game']: GameScene}
   o.scenes = {
-    main_menu = MainMenuScene:new(),
-    game = GameScene:new(),
+    main_menu = MainMenuScene:new(o),
+    game = GameScene:new(o),
   }
 
   o.current_scene = nil
