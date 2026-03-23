@@ -4,11 +4,14 @@ local CELL_SIZE = require('src.globals').CELL_SIZE
 ---@class slot
 ---@field x number
 ---@field y number
+---@field i number
+---@field j number
 ---@field item Item | nil
+---@field empty boolean
 
 ---@class Inventory: Entity
 ---@field shape number[][]
----@field slots any
+---@field slots slot[][]
 local Inventory = {}
 Inventory.__index = Inventory
 setmetatable(Inventory, { __index = Entity })
@@ -25,8 +28,6 @@ function Inventory:new(position, shape)
 
   for i, row in ipairs(shape) do
     for j, col in ipairs(row) do
-      if col == 0 then goto continue end
-
       local x = position.x + (CELL_SIZE * (j - 1))
       local y = position.y + (CELL_SIZE * (i - 1))
 
@@ -35,18 +36,19 @@ function Inventory:new(position, shape)
       table.insert(slots[i], {
         x = x,
         y = y,
+        i = i,
+        j = j,
         item = nil,
+        empty = col == 0,
       })
-
-      ::continue::
     end
   end
 
-  for _, row in ipairs(slots) do
+  --[[ for _, row in ipairs(slots) do
     for _, col in pairs(row) do
-      print(col.x, col.y)
+      print(col.x, col.y, col.empty)
     end
-  end
+  end ]]
 
   o.slots = slots
 
@@ -57,20 +59,60 @@ end
 ---@param my number
 function Inventory:containsPoint(mx, my)
   local contains = false
-  for i, row in ipairs(self.shape) do
+  ---@type slot | nil
+  local slot = nil
+
+  for _, row in ipairs(self.slots) do
+    for _, _slot in ipairs(row) do
+      if
+        (mx >= _slot.x)
+        and (mx <= _slot.x + CELL_SIZE)
+        and (my >= _slot.y)
+        and (my <= _slot.y + CELL_SIZE)
+      then
+        contains = true
+        slot = _slot
+        break
+      end
+    end
+  end
+
+  return { contains = contains, slot = slot }
+end
+
+---@param mx number
+---@param my number
+---@param item_shape number[][]
+function Inventory:checkSlotAvailability(mx, my, item_shape)
+  local result = self:containsPoint(mx, my)
+
+  if not result.contains or not result.slot then return end
+
+  if result.slot.item then
+    print 'has item already'
+    return
+  end
+
+  local is_available = true
+  for i, row in ipairs(item_shape) do
     for j, col in ipairs(row) do
       if col == 0 then goto continue end
 
-      local x = self.position.x + (CELL_SIZE * (j - 1))
-      local y = self.position.y + (CELL_SIZE * (i - 1))
-
       if
-        (mx >= x)
-        and (mx <= x + CELL_SIZE)
-        and (my >= y)
-        and (my <= y + CELL_SIZE)
+        result.slot.i + i - 1 > #self.slots
+        or result.slot.j + j - 1 > #self.slots[1]
       then
-        contains = true
+        is_available = false
+        break
+      end
+
+      local current_slot =
+        self.slots[result.slot.i + i - 1][result.slot.j + j - 1]
+
+      print(current_slot.x, current_slot.y)
+
+      if current_slot.item or current_slot.empty then
+        is_available = false
         break
       end
 
@@ -78,7 +120,11 @@ function Inventory:containsPoint(mx, my)
     end
   end
 
-  return contains
+  if is_available then
+    print 'item can fit'
+  else
+    print 'item cannot fit'
+  end
 end
 
 function Inventory:draw()

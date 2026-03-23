@@ -79,8 +79,9 @@ function Item:drag(mx, my, dx, dy, inventory)
     y = self.position.y + dy,
   }
 
-  if inventory:containsPoint(mx, my) then
-    -- TODO: These checks maybe should be done in inventory class
+  inventory:checkSlotAvailability(mx, my, self.shape)
+
+  --[[ if inventory:containsPoint(mx, my) then
     -- TODO: Check which inventory cell the mouse is in
     -- TODO: Check if cell is free
     -- TODO: If it's free, go through the item shape, and go cell by cell,
@@ -88,7 +89,7 @@ function Item:drag(mx, my, dx, dy, inventory)
     -- TODO: Add item to inventory
     -- TODO: Populate inventory slots with the item
     -- TODO: Change snap_position to first inventory_slot position
-  end
+  end ]]
 end
 
 function Item:endDrag()

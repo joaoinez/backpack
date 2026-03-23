@@ -25,11 +25,14 @@ function GameScene:load()
     { 1, 1, 1 },
     { 1, 0, 1 },
     { 1, 1, 1 },
+    { 1, 0, 0 },
   })
 
   table.insert(
     self.items,
+    -- FIX: Make this shape work for `Inventory:checkSlotAvailability`
     Item:new({ x = 20, y = 20 }, 'Sword', {
+      { 0, 1 },
       { 1, 1 },
     })
   )
