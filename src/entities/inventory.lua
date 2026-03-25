@@ -1,25 +1,26 @@
 local Entity = require 'src.entities.entity'
-local CELL_SIZE = require('src.globals').CELL_SIZE
+local draw_debug_slot = require 'src.utils.draw_debug_slot'
+local get_cell_position = require 'src.utils.get_cell_position'
+local is_point_in_cell = require 'src.utils.is_point_in_cell'
+local list = require 'src.utils.list'
+local loop_matrix = require 'src.utils.loop_matrix'
 
----@class slot
+---@class (exact) InventorySlot
 ---@field x number
 ---@field y number
----@field i number
----@field j number
----@field item Item | nil
----@field empty boolean
+---@field row_index number
+---@field col_index number
+---@field item Item?
 
 ---@class Inventory: Entity
----@field shape number[][]
----@field slots slot[][]
----@field hover_slots slot[][]
----@field current_hover_slot slot
----@field hover_item_can_fit boolean
+---@field private shape number[][]
+---@field private slots InventorySlot[]
+---@field private hovered_slots InventorySlot[]
 local Inventory = {}
 Inventory.__index = Inventory
 setmetatable(Inventory, { __index = Entity })
 
----@param position position
+---@param position EntityPosition
 ---@param shape number[][]
 function Inventory:new(position, shape)
   local o = Entity:new('inventory', position)
@@ -27,29 +28,26 @@ function Inventory:new(position, shape)
 
   o.shape = shape
 
-  local slots = {}
+  o.slots = {}
+  loop_matrix(shape, function(row_index, col_index, _, value)
+    if value == 0 then return end
 
-  for i, row in ipairs(shape) do
-    for j, col in ipairs(row) do
-      local x = position.x + (CELL_SIZE * (j - 1))
-      local y = position.y + (CELL_SIZE * (i - 1))
+    local x, y = get_cell_position(position, row_index, col_index)
 
-      if slots[i] == nil then slots[i] = {} end
-
-      table.insert(slots[i], {
+    table.insert(
+      o.slots,
+      ---@type InventorySlot
+      {
         x = x,
         y = y,
-        i = i,
-        j = j,
+        row_index = row_index,
+        col_index = col_index,
         item = nil,
-        empty = col == 0,
-      })
-    end
-  end
+      }
+    )
+  end)
 
-  o.slots = slots
-  o.hover_slots = {}
-  o.current_hover_slot = nil
+  o.hovered_slots = {}
 
   return o
 end
@@ -57,147 +55,24 @@ end
 ---@param mx number
 ---@param my number
 function Inventory:containsPoint(mx, my)
-  local contains = false
-  ---@type slot | nil
-  local slot = nil
+  local slot = list.find(
+    self.slots,
+    function(_slot) return is_point_in_cell(mx, my, _slot.x, _slot.y) end
+  )
 
-  for _, row in ipairs(self.slots) do
-    for _, _slot in ipairs(row) do
-      if
-        (mx >= _slot.x)
-        and (mx <= _slot.x + CELL_SIZE)
-        and (my >= _slot.y)
-        and (my <= _slot.y + CELL_SIZE)
-      then
-        contains = true
-        slot = _slot
-        break
-      end
-    end
-  end
+  local contains = slot ~= nil
 
-  return { contains = contains, slot = slot }
-end
-
----@param mx number
----@param my number
----@param item_shape number[][]
----@param length number
-function Inventory:checkSlotAvailability(mx, my, item_shape, length)
-  local result = self:containsPoint(mx, my)
-
-  if not result.contains or not result.slot then
-    self.current_hover_slot = nil
-    self.hover_slots = {}
-    return
-  end
-
-  if self.current_hover_slot == nil then
-    self.current_hover_slot = result.slot
-  elseif
-    self.current_hover_slot.x == result.slot.x
-    and self.current_hover_slot.y == result.slot.y
-  then
-    return
-  end
-
-  self.current_hover_slot = result.slot
-  self.hover_slots = {}
-
-  if result.slot.item then
-    print 'has item already'
-    return
-  end
-
-  local is_available = true
-  for i, row in ipairs(item_shape) do
-    for j, col in ipairs(row) do
-      if col == 0 then goto continue end
-
-      if
-        result.slot.i + i - 1 > #self.slots
-        or result.slot.j + j - 1 > #self.slots[1]
-      then
-        is_available = false
-        break
-      end
-
-      local current_slot =
-        self.slots[result.slot.i + i - 1][result.slot.j + j - 1]
-
-      if self.hover_slots[i] == nil then self.hover_slots[i] = {} end
-
-      table.insert(self.hover_slots[i], current_slot)
-
-      if current_slot.item or current_slot.empty then
-        is_available = false
-        break
-      end
-
-      ::continue::
-    end
-  end
-
-  if is_available then
-    self.hover_item_can_fit = true
-  else
-    self.hover_item_can_fit = false
-  end
-end
-
----@param item Item
-function Inventory:clearItemHover(item)
-  if self.hover_item_can_fit then
-    item.snap_position = {
-      x = self.hover_slots[1][1].x,
-      y = self.hover_slots[1][1].y,
-    }
-  end
-  self.current_hover_slot = nil
-  self.hover_slots = {}
+  return contains, slot
 end
 
 function Inventory:draw()
-  if not self.shape then return end
-
-  for i, row in ipairs(self.shape) do
-    for j, col in ipairs(row) do
-      if col == 0 then goto continue end
-
-      local x = self.position.x + (CELL_SIZE * (j - 1))
-      local y = self.position.y + (CELL_SIZE * (i - 1))
-      local w, h = CELL_SIZE, CELL_SIZE
-      local radius = math.max(2, CELL_SIZE * 0.08)
-
-      love.graphics.setColor(1, 0.6, 0)
-      love.graphics.rectangle('fill', x, y, w, h, radius)
-
-      love.graphics.setLineWidth(3)
-      love.graphics.setColor(0.6, 0.8, 1)
-      love.graphics.rectangle('line', x, y, w, h, radius)
-
-      ::continue::
-    end
-  end
-
-  for _, row in ipairs(self.hover_slots) do
-    for _, col in ipairs(row) do
-      if self.slots[col.i][col.j].empty then goto continue end
-
-      local x = self.position.x + (CELL_SIZE * (col.j - 1))
-      local y = self.position.y + (CELL_SIZE * (col.i - 1))
-      local w, h = CELL_SIZE, CELL_SIZE
-      local radius = math.max(2, CELL_SIZE * 0.08)
-
-      love.graphics.setColor(1, 0.6, 1)
-      love.graphics.rectangle('fill', x, y, w, h, radius)
-
-      love.graphics.setLineWidth(3)
-      love.graphics.setColor(0.6, 0.8, 1)
-      love.graphics.rectangle('line', x, y, w, h, radius)
-
-      ::continue::
-    end
+  for _, slot in ipairs(self.slots) do
+    draw_debug_slot(
+      slot.x,
+      slot.y,
+      { r = 0, g = 0, b = 1, a = 1 },
+      { r = 1, g = 1, b = 1, a = 1 }
+    )
   end
 end
 

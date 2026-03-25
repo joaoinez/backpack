@@ -1,6 +1,6 @@
 ---@class Scene
----@field scene_manager SceneManager
----@field name string
+---@field protected scene_manager SceneManager
+---@field protected name string
 local Scene = {}
 Scene.__index = Scene
 

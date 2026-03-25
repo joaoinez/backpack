@@ -3,8 +3,8 @@ local Item = require 'src.entities.item'
 local Scene = require 'src.scenes.scene'
 
 ---@class GameScene: Scene
----@field inventory Inventory
----@field items Item[]
+---@field private inventory Inventory
+---@field private items Item[]
 local GameScene = {}
 GameScene.__index = GameScene
 setmetatable(GameScene, { __index = Scene })
@@ -30,7 +30,6 @@ function GameScene:load()
 
   table.insert(
     self.items,
-    -- FIX: Make this shape work for `Inventory:checkSlotAvailability`
     Item:new({ x = 20, y = 20 }, 'Sword', {
       { 0, 1 },
       { 1, 1 },
@@ -53,7 +52,8 @@ end
 ---@param button number
 function GameScene:mousepressed(x, y, button)
   for _, item in ipairs(self.items) do
-    if button == 1 then item:startDrag(x, y) end
+    if button == 1 then
+    end
   end
 end
 
@@ -63,13 +63,11 @@ end
 ---@param dy number
 function GameScene:mousemoved(x, y, dx, dy)
   for _, item in ipairs(self.items) do
-    item:drag(x, y, dx, dy, self.inventory)
   end
 end
 
 function GameScene:mousereleased()
   for _, item in ipairs(self.items) do
-    item:endDrag(self.inventory)
   end
 end
 

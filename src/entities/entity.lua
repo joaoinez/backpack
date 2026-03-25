@@ -1,19 +1,15 @@
----@class position
+---@class (exact) EntityPosition
 ---@field x number
 ---@field y number
 
----@class debug_drawable
----@field w number
----@field h number
-
 ---@class Entity
----@field type string
----@field position position
+---@field protected type string
+---@field protected position EntityPosition
 local Entity = {}
 Entity.__index = Entity
 
 ---@param type string
----@param position position
+---@param position EntityPosition
 function Entity:new(type, position)
   local o = {}
   setmetatable(o, self)

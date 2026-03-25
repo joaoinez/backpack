@@ -1,21 +1,26 @@
 local Entity = require 'src.entities.entity'
-local CELL_SIZE = require('src.globals').CELL_SIZE
+local draw_debug_slot = require 'src.utils.draw_debug_slot'
+local get_cell_position = require 'src.utils.get_cell_position'
+local is_point_in_cell = require 'src.utils.is_point_in_cell'
+local list = require 'src.utils.list'
+local loop_matrix = require 'src.utils.loop_matrix'
 
----@class snap_position
+---@class (exact) ItemSlot
 ---@field x number
 ---@field y number
+---@field row_index number
+---@field col_index number
 
 ---@class Item: Entity
----@field name string
----@field shape number[][]
----@field dragging boolean
----@field snap_position snap_position
----@field length number
+---@field private name string
+---@field private shape number[][]
+---@field private slots ItemSlot[]
+---@field private snap_position EntityPosition
 local Item = {}
 Item.__index = Item
 setmetatable(Item, { __index = Entity })
 
----@param position position
+---@param position EntityPosition
 ---@param name string
 ---@param shape number[][]
 function Item:new(position, name, shape)
@@ -24,24 +29,29 @@ function Item:new(position, name, shape)
 
   o.name = name
   o.shape = shape
-  o.dragging = false
+
+  o.slots = {}
+  loop_matrix(shape, function(row_index, col_index, _, value)
+    if value == 0 then return end
+
+    local x, y = get_cell_position(position, row_index, col_index)
+
+    table.insert(
+      o.slots,
+      ---@type ItemSlot
+      {
+        x = x,
+        y = y,
+        row_index = row_index,
+        col_index = col_index,
+      }
+    )
+  end)
+
   o.snap_position = {
     x = position.x,
     y = position.y,
   }
-
-  local length = 0
-  for _, row in ipairs(shape) do
-    for _, col in ipairs(row) do
-      if col == 0 then goto continue end
-
-      length = length + 1
-
-      ::continue::
-    end
-  end
-
-  o.length = length
 
   return o
 end
@@ -49,85 +59,24 @@ end
 ---@param mx number
 ---@param my number
 function Item:containsPoint(mx, my)
-  local contains = false
-  for i, row in ipairs(self.shape) do
-    for j, col in ipairs(row) do
-      if col == 0 then goto continue end
+  local slot = list.find(
+    self.slots,
+    function(_slot) return is_point_in_cell(mx, my, _slot.x, _slot.y) end
+  )
 
-      local x = self.position.x + (CELL_SIZE * (j - 1))
-      local y = self.position.y + (CELL_SIZE * (i - 1))
+  local contains = slot ~= nil
 
-      if
-        (mx >= x)
-        and (mx <= x + CELL_SIZE)
-        and (my >= y)
-        and (my <= y + CELL_SIZE)
-      then
-        contains = true
-        break
-      end
-
-      ::continue::
-    end
-  end
-
-  return contains
-end
-
----@param mx number
----@param my number
-function Item:startDrag(mx, my)
-  if self:containsPoint(mx, my) then self.dragging = true end
-end
-
----@param mx number
----@param my number
----@param dx number
----@param dy number
----@param inventory Inventory
-function Item:drag(mx, my, dx, dy, inventory)
-  if not self.dragging then return end
-
-  self.position = {
-    x = self.position.x + dx,
-    y = self.position.y + dy,
-  }
-
-  inventory:checkSlotAvailability(mx, my, self.shape, self.length)
-end
-
----@param inventory Inventory
-function Item:endDrag(inventory)
-  if self.dragging then
-    self.dragging = false
-    self.position = {
-      x = self.snap_position.x,
-      y = self.snap_position.y,
-    }
-    inventory:clearItemHover(self)
-  end
+  return contains, slot
 end
 
 function Item:draw()
-  if not self.shape then return end
-
-  for i, row in ipairs(self.shape) do
-    for j, col in ipairs(row) do
-      if col == 0 then goto continue end
-
-      local x = self.position.x + (CELL_SIZE * (j - 1))
-      local y = self.position.y + (CELL_SIZE * (i - 1))
-      local radius = math.max(2, CELL_SIZE * 0.08)
-
-      love.graphics.setColor(1, 0.8, 0.6)
-      love.graphics.rectangle('fill', x, y, CELL_SIZE, CELL_SIZE, radius)
-
-      love.graphics.setLineWidth(3)
-      love.graphics.setColor(0.2, 1, 0.7)
-      love.graphics.rectangle('line', x, y, CELL_SIZE, CELL_SIZE, radius)
-
-      ::continue::
-    end
+  for _, slot in ipairs(self.slots) do
+    draw_debug_slot(
+      slot.x,
+      slot.y,
+      { r = 1, g = 0, b = 0, a = 1 },
+      { r = 1, g = 1, b = 1, a = 1 }
+    )
   end
 end
 
