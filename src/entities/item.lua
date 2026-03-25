@@ -10,6 +10,7 @@ local CELL_SIZE = require('src.globals').CELL_SIZE
 ---@field shape number[][]
 ---@field dragging boolean
 ---@field snap_position snap_position
+---@field length number
 local Item = {}
 Item.__index = Item
 setmetatable(Item, { __index = Entity })
@@ -28,6 +29,19 @@ function Item:new(position, name, shape)
     x = position.x,
     y = position.y,
   }
+
+  local length = 0
+  for _, row in ipairs(shape) do
+    for _, col in ipairs(row) do
+      if col == 0 then goto continue end
+
+      length = length + 1
+
+      ::continue::
+    end
+  end
+
+  o.length = length
 
   return o
 end
@@ -79,26 +93,18 @@ function Item:drag(mx, my, dx, dy, inventory)
     y = self.position.y + dy,
   }
 
-  inventory:checkSlotAvailability(mx, my, self.shape)
-
-  --[[ if inventory:containsPoint(mx, my) then
-    -- TODO: Check which inventory cell the mouse is in
-    -- TODO: Check if cell is free
-    -- TODO: If it's free, go through the item shape, and go cell by cell,
-    -- to see if they exist/are free
-    -- TODO: Add item to inventory
-    -- TODO: Populate inventory slots with the item
-    -- TODO: Change snap_position to first inventory_slot position
-  end ]]
+  inventory:checkSlotAvailability(mx, my, self.shape, self.length)
 end
 
-function Item:endDrag()
+---@param inventory Inventory
+function Item:endDrag(inventory)
   if self.dragging then
     self.dragging = false
     self.position = {
       x = self.snap_position.x,
       y = self.snap_position.y,
     }
+    inventory:clearItemHover(self)
   end
 end
 

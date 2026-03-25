@@ -69,7 +69,7 @@ end
 
 function GameScene:mousereleased()
   for _, item in ipairs(self.items) do
-    item:endDrag()
+    item:endDrag(self.inventory)
   end
 end
 

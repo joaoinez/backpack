@@ -12,6 +12,9 @@ local CELL_SIZE = require('src.globals').CELL_SIZE
 ---@class Inventory: Entity
 ---@field shape number[][]
 ---@field slots slot[][]
+---@field hover_slots slot[][]
+---@field current_hover_slot slot
+---@field hover_item_can_fit boolean
 local Inventory = {}
 Inventory.__index = Inventory
 setmetatable(Inventory, { __index = Entity })
@@ -44,13 +47,9 @@ function Inventory:new(position, shape)
     end
   end
 
-  --[[ for _, row in ipairs(slots) do
-    for _, col in pairs(row) do
-      print(col.x, col.y, col.empty)
-    end
-  end ]]
-
   o.slots = slots
+  o.hover_slots = {}
+  o.current_hover_slot = nil
 
   return o
 end
@@ -83,10 +82,27 @@ end
 ---@param mx number
 ---@param my number
 ---@param item_shape number[][]
-function Inventory:checkSlotAvailability(mx, my, item_shape)
+---@param length number
+function Inventory:checkSlotAvailability(mx, my, item_shape, length)
   local result = self:containsPoint(mx, my)
 
-  if not result.contains or not result.slot then return end
+  if not result.contains or not result.slot then
+    self.current_hover_slot = nil
+    self.hover_slots = {}
+    return
+  end
+
+  if self.current_hover_slot == nil then
+    self.current_hover_slot = result.slot
+  elseif
+    self.current_hover_slot.x == result.slot.x
+    and self.current_hover_slot.y == result.slot.y
+  then
+    return
+  end
+
+  self.current_hover_slot = result.slot
+  self.hover_slots = {}
 
   if result.slot.item then
     print 'has item already'
@@ -109,7 +125,9 @@ function Inventory:checkSlotAvailability(mx, my, item_shape)
       local current_slot =
         self.slots[result.slot.i + i - 1][result.slot.j + j - 1]
 
-      print(current_slot.x, current_slot.y)
+      if self.hover_slots[i] == nil then self.hover_slots[i] = {} end
+
+      table.insert(self.hover_slots[i], current_slot)
 
       if current_slot.item or current_slot.empty then
         is_available = false
@@ -121,10 +139,22 @@ function Inventory:checkSlotAvailability(mx, my, item_shape)
   end
 
   if is_available then
-    print 'item can fit'
+    self.hover_item_can_fit = true
   else
-    print 'item cannot fit'
+    self.hover_item_can_fit = false
   end
+end
+
+---@param item Item
+function Inventory:clearItemHover(item)
+  if self.hover_item_can_fit then
+    item.snap_position = {
+      x = self.hover_slots[1][1].x,
+      y = self.hover_slots[1][1].y,
+    }
+  end
+  self.current_hover_slot = nil
+  self.hover_slots = {}
 end
 
 function Inventory:draw()
@@ -140,6 +170,26 @@ function Inventory:draw()
       local radius = math.max(2, CELL_SIZE * 0.08)
 
       love.graphics.setColor(1, 0.6, 0)
+      love.graphics.rectangle('fill', x, y, w, h, radius)
+
+      love.graphics.setLineWidth(3)
+      love.graphics.setColor(0.6, 0.8, 1)
+      love.graphics.rectangle('line', x, y, w, h, radius)
+
+      ::continue::
+    end
+  end
+
+  for _, row in ipairs(self.hover_slots) do
+    for _, col in ipairs(row) do
+      if self.slots[col.i][col.j].empty then goto continue end
+
+      local x = self.position.x + (CELL_SIZE * (col.j - 1))
+      local y = self.position.y + (CELL_SIZE * (col.i - 1))
+      local w, h = CELL_SIZE, CELL_SIZE
+      local radius = math.max(2, CELL_SIZE * 0.08)
+
+      love.graphics.setColor(1, 0.6, 1)
       love.graphics.rectangle('fill', x, y, w, h, radius)
 
       love.graphics.setLineWidth(3)
