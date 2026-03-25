@@ -1,10 +1,12 @@
 local Inventory = require 'src.entities.inventory'
 local Item = require 'src.entities.item'
+local ItemDnDManager = require 'src.managers.item_dnd_manager'
 local Scene = require 'src.scenes.scene'
 
 ---@class GameScene: Scene
----@field private inventory Inventory
+---@field private inventory Inventory?
 ---@field private items Item[]
+---@field private item_dnd_manager ItemDnDManager?
 local GameScene = {}
 GameScene.__index = GameScene
 setmetatable(GameScene, { __index = Scene })
@@ -16,6 +18,7 @@ function GameScene:new(scene_manager)
 
   o.inventory = nil
   o.items = {}
+  o.item_dnd_manager = nil
 
   return o
 end
@@ -28,13 +31,7 @@ function GameScene:load()
     { 1, 0, 0 },
   })
 
-  table.insert(
-    self.items,
-    Item:new({ x = 20, y = 20 }, 'Sword', {
-      { 0, 1 },
-      { 1, 1 },
-    })
-  )
+  self.item_dnd_manager = ItemDnDManager:new(self.inventory, self.items)
 end
 
 function GameScene:draw()
@@ -51,34 +48,34 @@ end
 ---@param y number
 ---@param button number
 function GameScene:mousepressed(x, y, button)
-  for _, item in ipairs(self.items) do
-    if button == 1 then
-    end
-  end
+  self.item_dnd_manager:startDrag(x, y, button)
 end
 
 ---@param x number
 ---@param y number
 ---@param dx number
 ---@param dy number
-function GameScene:mousemoved(x, y, dx, dy)
-  for _, item in ipairs(self.items) do
-  end
-end
+function GameScene:mousemoved(x, y, dx, dy) self.item_dnd_manager:drag(dx, dy) end
 
-function GameScene:mousereleased()
-  for _, item in ipairs(self.items) do
-  end
-end
+function GameScene:mousereleased() self.item_dnd_manager:endDrag() end
 
 ---@param key string
 function GameScene:keypressed(key)
-  if key == 'return' then self.scene_manager:setScene 'main_menu' end
+  if key == 'return' then
+    table.insert(
+      self.items,
+      Item:new({ x = 1000, y = 500 }, 'Sword', {
+        { 0, 1 },
+        { 1, 1 },
+      })
+    )
+  end
 end
 
 function GameScene:unload()
   self.inventory = nil
   self.items = {}
+  self.item_dnd_manager = nil
 end
 
 return GameScene

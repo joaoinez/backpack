@@ -69,6 +69,25 @@ function Item:containsPoint(mx, my)
   return contains, slot
 end
 
+---@param dx number
+---@param dy number
+function Item:translate(dx, dy)
+  self.position.x = self.position.x + dx
+  self.position.y = self.position.y + dy
+
+  for _, slot in ipairs(self.slots) do
+    slot.x = slot.x + dx
+    slot.y = slot.y + dy
+  end
+end
+
+function Item:snapBack()
+  local dx = self.snap_position.x - self.position.x
+  local dy = self.snap_position.y - self.position.y
+
+  self:translate(dx, dy)
+end
+
 function Item:draw()
   for _, slot in ipairs(self.slots) do
     draw_debug_slot(
