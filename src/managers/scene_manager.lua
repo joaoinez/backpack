@@ -1,18 +1,21 @@
 local GameScene = require 'src.scenes.game_scene'
 local MainMenuScene = require 'src.scenes.main_menu_scene'
 
+---@alias SceneName 'main_menu' | 'game'
+---@alias Scenes {main_menu: MainMenuScene, game: GameScene}
+
 ---@class SceneManager
----@field private scenes {['main_menu']: MainMenuScene, ['game']: GameScene}
+---@field private scenes Scenes
 ---@field private current_scene MainMenuScene | GameScene
 local SceneManager = {}
 SceneManager.__index = SceneManager
 
----@param initial_scene 'main_menu' | 'game'
+---@param initial_scene SceneName
 function SceneManager:new(initial_scene)
   local o = {}
   setmetatable(o, self)
 
-  ---@type {['main_menu']: MainMenuScene, ['game']: GameScene}
+  ---@type Scenes
   o.scenes = {
     main_menu = MainMenuScene:new(o),
     game = GameScene:new(o),
@@ -25,7 +28,7 @@ function SceneManager:new(initial_scene)
   return o
 end
 
----@param scene 'main_menu' | 'game'
+---@param scene SceneName
 function SceneManager:setScene(scene)
   if self.current_scene then self.current_scene:unload() end
 
