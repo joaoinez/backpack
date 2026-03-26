@@ -37,7 +37,7 @@ end
 function GameScene:draw()
   love.graphics.setBackgroundColor(0.12, 0.16, 0.20)
 
-  self.inventory:draw()
+  if self.inventory then self.inventory:draw() end
 
   for _, item in ipairs(self.items) do
     item:draw()
@@ -48,6 +48,8 @@ end
 ---@param y number
 ---@param button number
 function GameScene:mousepressed(x, y, button)
+  if not self.item_dnd_manager then return end
+
   self.item_dnd_manager:startDrag(x, y, button)
 end
 
@@ -55,9 +57,17 @@ end
 ---@param y number
 ---@param dx number
 ---@param dy number
-function GameScene:mousemoved(x, y, dx, dy) self.item_dnd_manager:drag(dx, dy) end
+function GameScene:mousemoved(x, y, dx, dy)
+  if not self.item_dnd_manager then return end
 
-function GameScene:mousereleased() self.item_dnd_manager:endDrag() end
+  self.item_dnd_manager:drag(x, y, dx, dy)
+end
+
+function GameScene:mousereleased()
+  if not self.item_dnd_manager then return end
+
+  self.item_dnd_manager:endDrag()
+end
 
 ---@param key string
 function GameScene:keypressed(key)

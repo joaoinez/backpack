@@ -20,4 +20,6 @@ function Entity:new(type, position)
   return o
 end
 
+function Entity:getPosition() return self.position end
+
 return Entity

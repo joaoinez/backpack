@@ -12,10 +12,15 @@ local loop_matrix = require 'src.utils.loop_matrix'
 ---@field col_index number
 ---@field item Item?
 
+---@class (exact) HoveredInventorySlot
+---@field x number
+---@field y number
+
 ---@class Inventory: Entity
 ---@field private shape number[][]
 ---@field private slots InventorySlot[]
 ---@field private hovered_slots InventorySlot[]
+---@field private are_hovered_available boolean
 local Inventory = {}
 Inventory.__index = Inventory
 setmetatable(Inventory, { __index = Entity })
@@ -48,6 +53,7 @@ function Inventory:new(position, shape)
   end)
 
   o.hovered_slots = {}
+  o.hovered_available = false
 
   return o
 end
@@ -65,12 +71,41 @@ function Inventory:containsPoint(mx, my)
   return contains, slot
 end
 
+---@param row_index number
+---@param col_index number
+---@return InventorySlot?
+function Inventory:getSlot(row_index, col_index)
+  return list.find(
+    self.slots,
+    function(_slot)
+      return _slot.row_index == row_index and _slot.col_index == col_index
+    end
+  )
+end
+
+---@param slots InventorySlot[]
+---@param are_slots_available boolean
+function Inventory:setHoveredSlots(slots, are_slots_available)
+  self.hovered_slots = slots
+  self.are_hovered_available = are_slots_available
+end
+
 function Inventory:draw()
   for _, slot in ipairs(self.slots) do
     draw_debug_slot(
       slot.x,
       slot.y,
       { r = 0, g = 0, b = 1, a = 1 },
+      { r = 1, g = 1, b = 1, a = 1 }
+    )
+  end
+
+  for _, slot in ipairs(self.hovered_slots) do
+    draw_debug_slot(
+      slot.x,
+      slot.y,
+      self.are_hovered_available and { r = 0, g = 1, b = 0, a = 1 }
+        or { r = 1, g = 0, b = 0, a = 1 },
       { r = 1, g = 1, b = 1, a = 1 }
     )
   end

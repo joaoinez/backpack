@@ -81,6 +81,10 @@ function Item:translate(dx, dy)
   end
 end
 
+function Item:getSlots() return self.slots end
+
+function Item:setSnapPosition(x, y) self.snap_position = { x = x, y = y } end
+
 function Item:snapBack()
   local dx = self.snap_position.x - self.position.x
   local dy = self.snap_position.y - self.position.y
@@ -93,7 +97,7 @@ function Item:draw()
     draw_debug_slot(
       slot.x,
       slot.y,
-      { r = 1, g = 0, b = 0, a = 1 },
+      { r = 1, g = 1, b = 0, a = 1 },
       { r = 1, g = 1, b = 1, a = 1 }
     )
   end
