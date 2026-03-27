@@ -90,6 +90,13 @@ function Inventory:setHoveredSlots(slots, are_slots_available)
   self.are_hovered_available = are_slots_available
 end
 
+---@param item Item
+function Inventory:addItem(item)
+  for _, slot in ipairs(self.hovered_slots) do
+    slot.item = item
+  end
+end
+
 function Inventory:draw()
   for _, slot in ipairs(self.slots) do
     draw_debug_slot(

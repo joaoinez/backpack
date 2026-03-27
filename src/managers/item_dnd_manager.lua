@@ -43,34 +43,6 @@ function ItemDnDManager:startDrag(mx, my, button)
   end
 end
 
----@param mx number
----@param my number
----@param dx number
----@param dy number
-function ItemDnDManager:drag(mx, my, dx, dy)
-  if not self.dragged_item then return end
-
-  self.dragged_item:translate(dx, dy)
-
-  local is_point_in_inventory, inventory_slot =
-    self.inventory:containsPoint(mx, my)
-
-  if not is_point_in_inventory then
-    self.inventory:setHoveredSlots({}, false)
-    self.inventory_anchor_slot = nil
-  elseif
-    not self.inventory_anchor_slot
-    or inventory_slot.row_index ~= self.inventory_anchor_slot.row_index
-    or inventory_slot.col_index ~= self.inventory_anchor_slot.col_index
-  then
-    self.inventory:setHoveredSlots({}, false)
-    self.inventory_anchor_slot = inventory_slot
-    self.are_slots_available = false
-
-    self:hover()
-  end
-end
-
 ---@private
 function ItemDnDManager:hover()
   local row_offset = self.inventory_anchor_slot.row_index
@@ -111,28 +83,61 @@ function ItemDnDManager:hover()
   self.are_slots_available = are_slots_available
 end
 
+---@param mx number
+---@param my number
+---@param dx number
+---@param dy number
+function ItemDnDManager:drag(mx, my, dx, dy)
+  if not self.dragged_item then return end
+
+  self.dragged_item:translate(dx, dy)
+
+  local is_point_in_inventory, inventory_slot =
+    self.inventory:containsPoint(mx, my)
+
+  if not is_point_in_inventory then
+    self.inventory:setHoveredSlots({}, false)
+    self.inventory_anchor_slot = nil
+  elseif
+    not self.inventory_anchor_slot
+    or inventory_slot.row_index ~= self.inventory_anchor_slot.row_index
+    or inventory_slot.col_index ~= self.inventory_anchor_slot.col_index
+  then
+    self.inventory:setHoveredSlots({}, false)
+    self.inventory_anchor_slot = inventory_slot
+    self.are_slots_available = false
+
+    self:hover()
+  end
+end
+
+---@private
+function ItemDnDManager:snapItemToPosition()
+  local dx = self.inventory_anchor_slot.x - self.item_anchor_slot.x
+  local dy = self.inventory_anchor_slot.y - self.item_anchor_slot.y
+
+  self.dragged_item:translate(dx, dy)
+
+  local dragged_item_position = self.dragged_item:getPosition()
+
+  self.dragged_item:setSnapPosition(
+    dragged_item_position.x,
+    dragged_item_position.y
+  )
+end
+
 function ItemDnDManager:endDrag()
   if not self.dragged_item then return end
 
-  self.inventory:setHoveredSlots({}, false)
-
   if self.are_slots_available then
-    local dx = self.inventory_anchor_slot.x - self.item_anchor_slot.x
-    local dy = self.inventory_anchor_slot.y - self.item_anchor_slot.y
+    self.inventory:addItem(self.dragged_item)
 
-    self.dragged_item:translate(dx, dy)
-
-    local dragged_item_position = self.dragged_item:getPosition()
-
-    self.dragged_item:setSnapPosition(
-      dragged_item_position.x,
-      dragged_item_position.y
-    )
-
-    -- TODO: add item to inventory slots
+    self:snapItemToPosition()
   end
 
   self.dragged_item:snapBack()
+
+  self.inventory:setHoveredSlots({}, false)
 
   self.dragged_item = nil
   self.item_anchor_slot = nil
