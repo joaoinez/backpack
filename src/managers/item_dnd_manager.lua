@@ -87,7 +87,7 @@ function ItemDnDManager:hover()
     local inventory_slot =
       self.inventory:getSlot(inventory_row_index, inventory_col_index)
 
-    if not inventory_slot then return end
+    if not inventory_slot then goto continue end
 
     table.insert(
       hovered_slots,
@@ -99,7 +99,11 @@ function ItemDnDManager:hover()
     )
 
     if not inventory_slot.item then available_slots = available_slots + 1 end
+
+    ::continue::
   end
+
+  print(hovered_slots)
 
   local are_slots_available = available_slots == #self.dragged_item:getSlots()
 
