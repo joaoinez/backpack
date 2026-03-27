@@ -13,14 +13,19 @@ function MainMenuScene:new(scene_manager)
   return o
 end
 
+function MainMenuScene:load() end
+
 function MainMenuScene:draw()
   love.graphics.setBackgroundColor(0.12, 0.16, 0.20)
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.print('Main Menu', 20, 20)
 end
 
+---@param key string
 function MainMenuScene:keypressed(key)
   if key == 'return' then self.scene_manager:setScene 'game' end
 end
+
+function MainMenuScene:unload() end
 
 return MainMenuScene

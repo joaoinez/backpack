@@ -57,6 +57,7 @@
 
 ---@param t LoveConfig
 function love.conf(t)
+  t.version = '11.5'
   t.window.title = 'Backpack'
   t.window.width = 1600
   t.window.height = 900
