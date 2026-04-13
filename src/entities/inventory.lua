@@ -20,7 +20,7 @@ local loop_matrix = require 'src.utils.loop_matrix'
 ---@class Inventory: Entity
 ---@field private shape number[][]
 ---@field private slots InventorySlot[]
----@field private hovered_slots InventorySlot[]
+---@field private hovered_slots HoveredInventorySlot[]
 ---@field private are_hovered_available boolean
 local Inventory = {}
 Inventory.__index = Inventory
@@ -95,7 +95,7 @@ function Inventory:getSlot(row_index, col_index)
   )
 end
 
----@param slots InventorySlot[]
+---@param slots HoveredInventorySlot[]
 ---@param are_slots_available boolean
 function Inventory:setHoveredSlots(slots, are_slots_available)
   self.hovered_slots = slots
@@ -104,19 +104,31 @@ end
 
 ---@param item Item
 function Inventory:addItem(item)
-  for _, slot in ipairs(self.hovered_slots) do
-    slot.item = item
+  for _, hovered_slot in ipairs(self.hovered_slots) do
+    -- PERF: If `self.slots` were a table indexed by row and column indices,
+    -- this lookup would be O(1) instead of O(n)
+    local slot = list.find(
+      self.slots,
+      function(_slot)
+        return _slot.x == hovered_slot.x and _slot.y == hovered_slot.y
+      end
+    )
+
+    if slot then slot.item = item end
   end
 end
 
 function Inventory:draw()
   for _, slot in ipairs(self.slots) do
+    if slot.item then goto continue end
     draw_debug_slot(
       slot.x,
       slot.y,
       { r = 0, g = 0, b = 1, a = 1 },
       { r = 1, g = 1, b = 1, a = 1 }
     )
+
+    ::continue::
   end
 
   for _, slot in ipairs(self.hovered_slots) do

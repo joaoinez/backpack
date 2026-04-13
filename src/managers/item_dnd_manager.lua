@@ -50,6 +50,7 @@ function ItemDnDManager:hover()
   local col_offset = self.inventory_anchor_slot.col_index
     - self.item_anchor_slot.col_index
 
+  ---@type HoveredInventorySlot[]
   local hovered_slots = {}
   local available_slots = 0
   for _, item_slot in ipairs(self.dragged_item:getSlots()) do

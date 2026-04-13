@@ -97,7 +97,7 @@ function Item:draw()
     draw_debug_slot(
       slot.x,
       slot.y,
-      { r = 1, g = 1, b = 0, a = 1 },
+      { r = 1, g = 1, b = 0, a = 0.75 },
       { r = 1, g = 1, b = 1, a = 1 }
     )
   end
