@@ -24,12 +24,19 @@ function GameScene:new(scene_manager)
 end
 
 function GameScene:load()
-  self.inventory = Inventory:new({ x = 200, y = 200 }, {
-    { 1, 1, 1 },
-    { 1, 0, 1 },
-    { 1, 1, 1 },
-    { 1, 0, 0 },
-  })
+  local screen_width, screen_height = love.graphics.getDimensions()
+
+  self.inventory = Inventory:new(
+    { x = 0.5, y = 0.5, relative = true, centered = true },
+    {
+      { 1, 1, 1 },
+      { 1, 0, 1 },
+      { 1, 1, 1 },
+      { 1, 0, 0 },
+    },
+    { x = 0, y = 0 },
+    { width = screen_width, height = screen_height }
+  )
 
   self.item_dnd_manager = ItemDnDManager:new(self.inventory, self.items)
 end

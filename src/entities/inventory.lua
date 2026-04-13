@@ -1,6 +1,7 @@
 local Entity = require 'src.entities.entity'
 local draw_debug_slot = require 'src.utils.draw_debug_slot'
 local get_cell_position = require 'src.utils.get_cell_position'
+local get_matrix_dimensions = require 'src.utils.get_matrix_dimensions'
 local is_point_in_cell = require 'src.utils.is_point_in_cell'
 local list = require 'src.utils.list'
 local loop_matrix = require 'src.utils.loop_matrix'
@@ -27,8 +28,19 @@ setmetatable(Inventory, { __index = Entity })
 
 ---@param position EntityPosition
 ---@param shape number[][]
-function Inventory:new(position, shape)
-  local o = Entity:new('inventory', position)
+---@param parent_position EntityPosition?
+---@param parent_dimensions EntityDimensions?
+function Inventory:new(position, shape, parent_position, parent_dimensions)
+  local width, height = get_matrix_dimensions(shape)
+  local dimensions = { width = width, height = height }
+
+  local o = Entity:new(
+    'inventory',
+    position,
+    dimensions,
+    parent_position,
+    parent_dimensions
+  )
   setmetatable(o, self)
 
   o.shape = shape
@@ -37,7 +49,7 @@ function Inventory:new(position, shape)
   loop_matrix(shape, function(row_index, col_index, _, value)
     if value == 0 then return end
 
-    local x, y = get_cell_position(position, row_index, col_index)
+    local x, y = get_cell_position(o.position, row_index, col_index)
 
     table.insert(
       o.slots,

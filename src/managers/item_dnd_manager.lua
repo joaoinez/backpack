@@ -75,8 +75,6 @@ function ItemDnDManager:hover()
     ::continue::
   end
 
-  print(hovered_slots)
-
   local are_slots_available = available_slots == #self.dragged_item:getSlots()
 
   self.inventory:setHoveredSlots(hovered_slots, are_slots_available)
