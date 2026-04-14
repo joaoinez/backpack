@@ -3,7 +3,7 @@ local draw_debug_slot = require 'src.utils.draw_debug_slot'
 local get_cell_position = require 'src.utils.get_cell_position'
 local is_point_in_cell = require 'src.utils.is_point_in_cell'
 local list = require 'src.utils.list'
-local loop_matrix = require 'src.utils.loop_matrix'
+local matrix = require 'src.utils.matrix'
 
 ---@class (exact) ItemSlot
 ---@field x number
@@ -31,10 +31,10 @@ function Item:new(position, name, shape)
   o.shape = shape
 
   o.slots = {}
-  loop_matrix(shape, function(row_index, col_index, _, value)
+  matrix.loop(shape, function(value, index)
     if value == 0 then return end
 
-    local x, y = get_cell_position(position, row_index, col_index)
+    local x, y = get_cell_position(position, index.row, index.col)
 
     table.insert(
       o.slots,
@@ -42,8 +42,8 @@ function Item:new(position, name, shape)
       {
         x = x,
         y = y,
-        row_index = row_index,
-        col_index = col_index,
+        row_index = index.row,
+        col_index = index.col,
       }
     )
   end)
@@ -56,8 +56,13 @@ function Item:new(position, name, shape)
   return o
 end
 
+---@return number[][]
+function Item:getShape() return self.shape end
+
 ---@param mx number
 ---@param my number
+---@return boolean
+---@return ItemSlot?
 function Item:containsPoint(mx, my)
   local slot = list.find(
     self.slots,
@@ -81,8 +86,11 @@ function Item:translate(dx, dy)
   end
 end
 
+---@return ItemSlot[]
 function Item:getSlots() return self.slots end
 
+---@param x number
+---@param y number
 function Item:setSnapPosition(x, y) self.snap_position = { x = x, y = y } end
 
 function Item:snapBack()
@@ -101,6 +109,27 @@ function Item:draw()
       { r = 1, g = 1, b = 1, a = 1 }
     )
   end
+end
+
+function Item:rotate()
+  self.shape = matrix.rotate(self.shape)
+  self.slots = {}
+  matrix.loop(self.shape, function(value, index)
+    if value == 0 then return end
+
+    local x, y = get_cell_position(self.position, index.row, index.col)
+
+    table.insert(
+      self.slots,
+      ---@type ItemSlot
+      {
+        x = x,
+        y = y,
+        row_index = index.row,
+        col_index = index.col,
+      }
+    )
+  end)
 end
 
 return Item

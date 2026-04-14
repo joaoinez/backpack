@@ -1,3 +1,6 @@
+local G = require 'src.globals'
+local list = require 'src.utils.list'
+
 ---@class ItemDnDManager
 ---@field private inventory Inventory
 ---@field private items Item[]
@@ -45,6 +48,8 @@ end
 
 ---@private
 function ItemDnDManager:hover()
+  if not self.inventory_anchor_slot then return end
+
   local row_offset = self.inventory_anchor_slot.row_index
     - self.item_anchor_slot.row_index
   local col_offset = self.inventory_anchor_slot.col_index
@@ -94,6 +99,8 @@ function ItemDnDManager:drag(mx, my, dx, dy)
   local is_point_in_inventory, inventory_slot =
     self.inventory:containsPoint(mx, my)
 
+  if not inventory_slot then return end
+
   if not is_point_in_inventory then
     self.inventory:setHoveredSlots({}, false)
     self.inventory_anchor_slot = nil
@@ -112,6 +119,8 @@ end
 
 ---@private
 function ItemDnDManager:snapItemToPosition()
+  if not self.inventory_anchor_slot then return end
+
   local dx = self.inventory_anchor_slot.x - self.item_anchor_slot.x
   local dy = self.inventory_anchor_slot.y - self.item_anchor_slot.y
 
@@ -142,6 +151,53 @@ function ItemDnDManager:endDrag()
   self.item_anchor_slot = nil
   self.inventory_anchor_slot = nil
   self.are_slots_available = false
+end
+
+---@private
+---@return ItemSlot?
+function ItemDnDManager:rotateItemAroundAnchor()
+  local cur_anchor_slot_row_index = self.item_anchor_slot.row_index
+  local cur_anchor_slot_col_index = self.item_anchor_slot.col_index
+
+  local num_rows_in_dragged_item_shape = #self.dragged_item:getShape()
+
+  local dx = (
+    cur_anchor_slot_col_index
+    - 1
+    - (num_rows_in_dragged_item_shape - cur_anchor_slot_row_index)
+  ) * G.CELL_SIZE
+  local dy = (cur_anchor_slot_row_index - 1 - (cur_anchor_slot_col_index - 1))
+    * G.CELL_SIZE
+
+  self.dragged_item:rotate()
+  self.dragged_item:translate(dx, dy)
+
+  local new_anchor_slot_row_index = cur_anchor_slot_col_index
+  local new_anchor_slot_col_index = num_rows_in_dragged_item_shape
+    - cur_anchor_slot_row_index
+    + 1
+
+  local new_anchor_slot = list.find(
+    self.dragged_item:getSlots(),
+    function(_slot)
+      return _slot.row_index == new_anchor_slot_row_index
+        and _slot.col_index == new_anchor_slot_col_index
+    end
+  )
+
+  return new_anchor_slot
+end
+
+function ItemDnDManager:rotateDraggedItem()
+  if not self.dragged_item then return end
+
+  local new_anchor_slot = self:rotateItemAroundAnchor()
+
+  if not new_anchor_slot then return end
+
+  self.item_anchor_slot = new_anchor_slot
+
+  self:hover()
 end
 
 return ItemDnDManager

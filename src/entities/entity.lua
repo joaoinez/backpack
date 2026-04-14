@@ -4,6 +4,7 @@ local uuid = require 'src.utils.uuid'
 ---@param dimensions EntityDimensions?
 ---@param parent_position EntityPosition?
 ---@param parent_dimensions EntityDimensions?
+---@return EntityPosition
 local function calc_position(
   position,
   dimensions,
@@ -17,6 +18,7 @@ local function calc_position(
     and position.centered
     and dimensions
   then
+    ---@type EntityPosition
     return {
       x = ((position.x + parent_position.x) * parent_dimensions.width)
         - (dimensions.width / 2),
@@ -28,6 +30,7 @@ local function calc_position(
   end
 
   if position.relative and parent_position then
+    ---@type EntityPosition
     return {
       x = position.x + parent_position,
       y = position.y + parent_position,
@@ -37,6 +40,7 @@ local function calc_position(
   end
 
   if position.centered and dimensions then
+    ---@type EntityPosition
     return {
       x = position.x - (dimensions.width / 2),
       y = position.y - (dimensions.height / 2),
@@ -45,6 +49,7 @@ local function calc_position(
     }
   end
 
+  ---@type EntityPosition
   return {
     x = position.x,
     y = position.y,
@@ -93,8 +98,21 @@ function Entity:new(
   return o
 end
 
+---@return string
 function Entity:getId() return self.id end
 
+---@return EntityPosition
 function Entity:getPosition() return self.position end
+
+---@param x number?
+---@param y number?
+function Entity:setPosition(x, y)
+  self.position = {
+    x = x or self.position.x,
+    y = y or self.position.y,
+    relative = self.position.relative,
+    centered = self.position.centered,
+  }
+end
 
 return Entity

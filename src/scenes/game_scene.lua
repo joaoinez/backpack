@@ -3,7 +3,12 @@ local Item = require 'src.entities.item'
 local ItemDnDManager = require 'src.managers.item_dnd_manager'
 local Scene = require 'src.scenes.scene'
 
+---@class MousePosition
+---@field x number
+---@field y number
+
 ---@class GameScene: Scene
+---@field private mouse_position MousePosition?
 ---@field private inventory Inventory?
 ---@field private items Item[]
 ---@field private item_dnd_manager ItemDnDManager?
@@ -16,6 +21,7 @@ function GameScene:new(scene_manager)
   local o = Scene:new(scene_manager, 'game')
   setmetatable(o, self)
 
+  o.mouse_position = nil
   o.inventory = nil
   o.items = {}
   o.item_dnd_manager = nil
@@ -29,10 +35,10 @@ function GameScene:load()
   self.inventory = Inventory:new(
     { x = 0.5, y = 0.5, relative = true, centered = true },
     {
-      { 1, 1, 1 },
-      { 1, 0, 1 },
-      { 1, 1, 1 },
-      { 1, 0, 0 },
+      { 1, 1, 1, 1 },
+      { 1, 1, 1, 1 },
+      { 1, 1, 1, 1 },
+      { 1, 1, 1, 1 },
     },
     { x = 0, y = 0 },
     { width = screen_width, height = screen_height }
@@ -65,6 +71,8 @@ end
 ---@param dx number
 ---@param dy number
 function GameScene:mousemoved(x, y, dx, dy)
+  self.mouse_position = { x = x, y = y }
+
   if not self.item_dnd_manager then return end
 
   self.item_dnd_manager:drag(x, y, dx, dy)
@@ -86,6 +94,11 @@ function GameScene:keypressed(key)
         { 1, 1 },
       })
     )
+  end
+  if key == 'space' then
+    if not self.item_dnd_manager then return end
+
+    self.item_dnd_manager:rotateDraggedItem()
   end
 end
 

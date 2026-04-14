@@ -4,7 +4,7 @@ local get_cell_position = require 'src.utils.get_cell_position'
 local get_matrix_dimensions = require 'src.utils.get_matrix_dimensions'
 local is_point_in_cell = require 'src.utils.is_point_in_cell'
 local list = require 'src.utils.list'
-local loop_matrix = require 'src.utils.loop_matrix'
+local matrix = require 'src.utils.matrix'
 
 ---@class (exact) InventorySlot
 ---@field x number
@@ -46,10 +46,10 @@ function Inventory:new(position, shape, parent_position, parent_dimensions)
   o.shape = shape
 
   o.slots = {}
-  loop_matrix(shape, function(row_index, col_index, _, value)
+  matrix.loop(shape, function(value, index)
     if value == 0 then return end
 
-    local x, y = get_cell_position(o.position, row_index, col_index)
+    local x, y = get_cell_position(o.position, index.row, index.col)
 
     table.insert(
       o.slots,
@@ -57,8 +57,8 @@ function Inventory:new(position, shape, parent_position, parent_dimensions)
       {
         x = x,
         y = y,
-        row_index = row_index,
-        col_index = col_index,
+        row_index = index.row,
+        col_index = index.col,
         item = nil,
       }
     )
@@ -72,6 +72,8 @@ end
 
 ---@param mx number
 ---@param my number
+---@return boolean
+---@return InventorySlot?
 function Inventory:containsPoint(mx, my)
   local slot = list.find(
     self.slots,
