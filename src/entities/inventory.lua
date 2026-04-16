@@ -70,6 +70,21 @@ function Inventory:new(position, shape, parent_position, parent_dimensions)
   return o
 end
 
+---@return InventorySlot[]
+function Inventory:getSlots() return self.slots end
+
+---@param row_index number
+---@param col_index number
+---@return InventorySlot?
+function Inventory:getSlot(row_index, col_index)
+  return list.find(
+    self.slots,
+    function(_slot)
+      return _slot.row_index == row_index and _slot.col_index == col_index
+    end
+  )
+end
+
 ---@param mx number
 ---@param my number
 ---@return boolean
@@ -83,18 +98,6 @@ function Inventory:containsPoint(mx, my)
   local contains = slot ~= nil
 
   return contains, slot
-end
-
----@param row_index number
----@param col_index number
----@return InventorySlot?
-function Inventory:getSlot(row_index, col_index)
-  return list.find(
-    self.slots,
-    function(_slot)
-      return _slot.row_index == row_index and _slot.col_index == col_index
-    end
-  )
 end
 
 ---@param slots HoveredInventorySlot[]

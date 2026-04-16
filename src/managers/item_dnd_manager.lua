@@ -78,7 +78,12 @@ function ItemDnDManager:hover()
       }
     )
 
-    if not inventory_slot.item then available_slots = available_slots + 1 end
+    if
+      not inventory_slot.item
+      or inventory_slot.item:getId() == self.dragged_item:getId()
+    then
+      available_slots = available_slots + 1
+    end
 
     ::continue::
   end
@@ -104,6 +109,7 @@ function ItemDnDManager:drag(mx, my, dx, dy)
   if not is_point_in_inventory then
     self.inventory:setHoveredSlots({}, false)
     self.inventory_anchor_slot = nil
+    self.are_slots_available = false
   elseif
     not self.inventory_anchor_slot
     or (inventory_slot and inventory_slot.row_index ~= self.inventory_anchor_slot.row_index)
