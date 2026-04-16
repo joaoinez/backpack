@@ -106,6 +106,10 @@ end
 
 ---@param item Item
 function Inventory:addItem(item)
+  for _, slot in ipairs(self.slots) do
+    if slot.item and slot.item.id == item.id then slot.item = nil end
+  end
+
   for _, hovered_slot in ipairs(self.hovered_slots) do
     -- PERF: If `self.slots` were a table indexed by row and column indices,
     -- this lookup would be O(1) instead of O(n)

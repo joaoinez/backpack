@@ -8,6 +8,7 @@ local list = require 'src.utils.list'
 ---@field private item_anchor_slot ItemSlot?
 ---@field private inventory_anchor_slot InventorySlot?
 ---@field private are_slots_available boolean
+---@field private num_dragged_item_rotations number
 local ItemDnDManager = {}
 ItemDnDManager.__index = ItemDnDManager
 
@@ -24,6 +25,7 @@ function ItemDnDManager:new(inventory, items)
   o.item_anchor_slot = nil
   o.inventory_anchor_slot = nil
   o.are_slots_available = false
+  o.num_dragged_item_rotations = 0
 
   return o
 end
@@ -99,15 +101,16 @@ function ItemDnDManager:drag(mx, my, dx, dy)
   local is_point_in_inventory, inventory_slot =
     self.inventory:containsPoint(mx, my)
 
-  if not inventory_slot then return end
-
   if not is_point_in_inventory then
     self.inventory:setHoveredSlots({}, false)
     self.inventory_anchor_slot = nil
   elseif
     not self.inventory_anchor_slot
-    or inventory_slot.row_index ~= self.inventory_anchor_slot.row_index
-    or inventory_slot.col_index ~= self.inventory_anchor_slot.col_index
+    or (inventory_slot and inventory_slot.row_index ~= self.inventory_anchor_slot.row_index)
+    or (
+      inventory_slot
+      and inventory_slot.col_index ~= self.inventory_anchor_slot.col_index
+    )
   then
     self.inventory:setHoveredSlots({}, false)
     self.inventory_anchor_slot = inventory_slot
@@ -141,6 +144,10 @@ function ItemDnDManager:endDrag()
     self.inventory:addItem(self.dragged_item)
 
     self:snapItemToPosition()
+  elseif self.num_dragged_item_rotations > 0 then
+    for _ = 1, 4 - self.num_dragged_item_rotations do
+      self.dragged_item:rotate()
+    end
   end
 
   self.dragged_item:snapBack()
@@ -151,6 +158,7 @@ function ItemDnDManager:endDrag()
   self.item_anchor_slot = nil
   self.inventory_anchor_slot = nil
   self.are_slots_available = false
+  self.num_dragged_item_rotations = 0
 end
 
 ---@private
@@ -192,6 +200,9 @@ function ItemDnDManager:rotateDraggedItem()
   if not self.dragged_item then return end
 
   local new_anchor_slot = self:rotateItemAroundAnchor()
+
+  self.num_dragged_item_rotations = self.num_dragged_item_rotations == 3 and 0
+    or self.num_dragged_item_rotations + 1
 
   if not new_anchor_slot then return end
 
