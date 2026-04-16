@@ -16,6 +16,7 @@ local matrix = require 'src.utils.matrix'
 ---@field private shape number[][]
 ---@field private slots ItemSlot[]
 ---@field private snap_position EntityPosition
+---@field private debug_color {r: number, g: number, b: number, a: number}
 local Item = {}
 Item.__index = Item
 setmetatable(Item, { __index = Entity })
@@ -51,6 +52,13 @@ function Item:new(position, name, shape)
   o.snap_position = {
     x = position.x,
     y = position.y,
+  }
+
+  o.debug_color = {
+    r = math.random(),
+    g = math.random(),
+    b = math.random(),
+    a = 0.75,
   }
 
   return o
@@ -105,7 +113,7 @@ function Item:draw()
     draw_debug_slot(
       slot.x,
       slot.y,
-      { r = 1, g = 1, b = 0, a = 0.75 },
+      self.debug_color,
       { r = 1, g = 1, b = 1, a = 1 }
     )
   end
